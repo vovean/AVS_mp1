@@ -7,7 +7,7 @@ entry start
 section '.data' data readable writable
  
         ;strings to be printed later
-        numberPrompt                    db 'Input the size of the numbery (0 to 100 inclusive)', 10, 0
+        numberPrompt                    db 'Input the number (in range [0, 2^24))', 10, 0
         strReadInt                      db '%d', 0
         strPrintInt                     db '%d', 10, 0
         strInvalidWarning               db 'Invalid input', 10, 0
@@ -40,14 +40,14 @@ section '.code' code readable executable
                 jge     invalidNum
 
         check_bit:
-                cmp     eax,     0
+                cmp     eax,     0              ;if number is 0 than end program
                 je      printFinalInfo
-                mov     edx,    eax
-                and     edx,    0x1
-                cmp     edx,    1
-                je      incOnes
-                shr     eax,    1
-                jmp     check_bit
+                mov     edx,    eax             ;copy number to edx
+                and     edx,    0x1             ;check last bit of edx by using AND with 0x1
+                cmp     edx,    1               ;compare result of AND with 1
+                je      incOnes                 ;if it is 1 than increment amount of 1 bits (if it is 0 than do nothing)
+                shr     eax,    1               ;shift bits 1 position to the right
+                jmp     check_bit               ;continue the loop
 
         incOnes:
                 ; increase count of ones
@@ -59,10 +59,11 @@ section '.code' code readable executable
                 dec     edx
                 mov     [zeros], edx
 
-                shr     eax,    1
-                jmp     check_bit
+                shr     eax,    1               ;shift bits 1 position to the right
+                jmp     check_bit               ;continue the loop
 
         invalidNum:
+                ;print that user number is too big and end the program
                 push    strInvalidWarning
                 call    [printf]
                 jmp     endProgram
@@ -71,7 +72,7 @@ section '.code' code readable executable
                 push    printOnes
                 call    [printf]
 
-                ;amount of bits set to 1
+                ;print amount of bits set to 1
                 push    [ones]
                 push    strPrintInt
                 call    [printf]
@@ -79,12 +80,13 @@ section '.code' code readable executable
                 push    printZeros
                 call    [printf]
 
-                ;amount of bits set to 0
+                ;print amount of bits set to 0
                 push    [zeros]
                 push    strPrintInt
                 call    [printf]
 
         endProgram:
+                ;ask user to press any key to exit
                 push    exitPrompt
                 call    [printf]
                 ;wait for user to press something before close console windows
